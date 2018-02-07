@@ -16,7 +16,7 @@ var admin_authenticate = (req, res, next)=>{
         req.token = token;
         next();
     }).catch((e)=>{
-        res.status(401).send();
+        res.status(401).send({message:"Unauthorized user, login again"});
     });
 };
 
