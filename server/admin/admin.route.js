@@ -11,7 +11,7 @@ router.route('/')
   .get(validate(paramValidation.adminList), admin_authenticate, adminCtrl.list)
 
   /** POST /api/admins - Create new admin */
-  .post(validate(paramValidation.createAdmin),  adminCtrl.create);
+  .post(validate(paramValidation.createAdmin), admin_authenticate, adminCtrl.create);
 
 router.route('/me')
   .get(admin_authenticate, (req, res)=>{
