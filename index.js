@@ -1,14 +1,12 @@
-'use strict';
-
-var mongoose = require('mongoose');
-var util = require('util');
+const mongoose = require('mongoose');
+const util = require('util');
 
 // config should be imported before importing any other file
-var config = require('./config/config');
-var app = require('./config/express');
-var http = require("http");
+const config = require('./config/config');
+const app = require('./config/express');
+const http = require("http");
 
-var debug = require('debug')('express-admin:index');
+const debug = require('debug')('express-admin:index');
 
 // make bluebird default Promise
 Promise = require('bluebird'); // eslint-disable-line no-global-assign
@@ -17,16 +15,16 @@ Promise = require('bluebird'); // eslint-disable-line no-global-assign
 mongoose.Promise = Promise;
 
 // connect to mongo db
-var mongoUri = config.mongo.host;
+const mongoUri = config.mongo.host;
 mongoose.connect(mongoUri, { server: { socketOptions: { keepAlive: 1 } } });
-mongoose.connection.on('error', function () {
-  throw new Error('unable to connect to database: ' + mongoUri);
+mongoose.connection.on('error', () => {
+  throw new Error(`unable to connect to database: ${mongoUri}`);
 });
 
 // print mongoose logs in dev env
 if (config.mongooseDebug) {
-  mongoose.set('debug', function (collectionName, method, query, doc) {
-    debug(collectionName + '.' + method, util.inspect(query, false, 20), doc);
+  mongoose.set('debug', (collectionName, method, query, doc) => {
+    debug(`${collectionName}.${method}`, util.inspect(query, false, 20), doc);
   });
 }
 
@@ -35,10 +33,10 @@ if (config.mongooseDebug) {
 if (!module.parent) {
   // listen on port config.port
 
-  app.listen(config.port, function () {
-    console.info('server started on port ' + config.port + ' (' + config.env + ')'); // eslint-disable-line no-console
+  app.listen(config.port, () => {
+    console.info(`server started on port ${config.port} (${config.env})`); // eslint-disable-line no-console
   });
 }
 
+
 module.exports = app;
-//# sourceMappingURL=index.js.map

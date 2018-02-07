@@ -1,10 +1,8 @@
-'use strict';
-
-var Promise = require('bluebird');
-var mongoose = require('mongoose');
-var httpStatus = require('http-status');
-var APIError = require('../helpers/APIError');
-var validator = require('validator');
+const Promise = require('bluebird');
+const mongoose = require('mongoose');
+const httpStatus = require('http-status');
+const APIError = require('../helpers/APIError');
+const validator = require('validator');
 
 /**
  * Todos Schema
@@ -31,7 +29,7 @@ var TodoScheme = new mongoose.Schema({
     type: Date,
     default: Date.now()
   },
-  _creator: {
+  _creator:{
     type: mongoose.Schema.Types.ObjectId,
     required: true
   }
@@ -39,5 +37,4 @@ var TodoScheme = new mongoose.Schema({
 
 var Todo = mongoose.model('Todo', TodoScheme);
 
-module.exports = { Todo: Todo };
-//# sourceMappingURL=todo.model.js.map
+module.exports = {Todo};

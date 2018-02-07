@@ -1,7 +1,5 @@
-'use strict';
-
-var Joi = require('joi');
-var validator = require('validator');
+const Joi = require('joi');
+const validator = require('validator');
 
 module.exports = {
   // POST /api/users
@@ -128,7 +126,7 @@ module.exports = {
     }
   },
 
-  // POST /api/prizes
+// POST /api/prizes
   createPrize: {
     body: {
       title: Joi.string().required(),
@@ -157,5 +155,5 @@ module.exports = {
     }
   }
 
+
 };
-//# sourceMappingURL=param-validation.js.map

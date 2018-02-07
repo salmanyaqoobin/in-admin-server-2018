@@ -1,15 +1,11 @@
-'use strict';
-
-var async = require('async');
-var Promise = require('bluebird');
-var mongoose = require('mongoose');
-var httpStatus = require('http-status');
-var APIError = require('../helpers/APIError');
-var validator = require('validator');
-var _ = require('lodash');
-
-var _require = require('mongodb'),
-    ObjectID = _require.ObjectID;
+const async = require('async');
+const Promise = require('bluebird');
+const mongoose = require('mongoose');
+const httpStatus = require('http-status');
+const APIError = require('../helpers/APIError');
+const validator = require('validator');
+const _ = require('lodash');
+const {ObjectID} = require('mongodb');
 
 /**
  * Coupon Schema
@@ -94,6 +90,7 @@ var CouponScheme = new mongoose.Schema({
   }
 });
 
+
 /**
  * Methods
  */
@@ -104,41 +101,50 @@ CouponScheme.method({
   //  var userObject = user.toObject();
   //  return _.pick(userObject, ['_id', 'email']);
   //},
-  toJSON: function toJSON() {
+  toJSON(){
     var coupon = this;
     var couponObject = coupon.toObject();
     //delete couponObject.couponQR;
     return couponObject;
     //return _.pick(userObject, ['_id', 'email']);
   },
-  generateQR: function generateQR(qrStatus, total_qr) {
+
+  generateQR(qrStatus, total_qr) {
     var coupon = this;
-    for (var i = 1; i <= total_qr; i++) {
-      coupon.couponQR.push({ qr_id: new ObjectID(), qrStatus: qrStatus });
+    for(var i=1;i<=total_qr;i++){
+      coupon.couponQR.push({qr_id: new ObjectID(), qrStatus:qrStatus});
     }
-    return coupon.save().then(function () {
+    return coupon.save().then(() => {
       return coupon;
     });
   },
-  removeQR: function removeQR(qr_id) {
+
+  removeQR(qr_id) {
     var coupon = this;
 
-    return coupon.update({ $pull: { couponQR: { qr_id: qr_id } } }, { multi: true }).catch(function (e) {
-      Promise.reject(e);
-    });
+    return coupon.update(
+      { $pull:{ couponQR:{qr_id} } },
+      { multi: true }
+    ).catch((e)=>{Promise.reject(e)});
   },
-  countQR: function countQR() {
+
+  countQR() {
     var coupon = this;
-    var aggregatorOpts = [{
-      $unwind: "$couponQR"
-    }, {
-      $group: {
-        count: { $sum: 1 }
+    const aggregatorOpts = [
+      {
+        $unwind: "$couponQR"
+      },
+      {
+        $group: {
+          count: { $sum: 1 }
+        }
       }
-    }];
+    ];
     var count = coupon.aggregate(aggregatorOpts).exec();
     return count;
   }
+
+
 });
 
 /**
@@ -150,16 +156,17 @@ CouponScheme.statics = {
    * @param {ObjectId} id - The objectId of user.
    * @returns {Promise<Coupon, APIError>}
    */
-  get: function get(id) {
-    return this.findById(id).exec().then(function (coupon) {
-      if (coupon) {
-        return coupon;
-      }
-      var err = new APIError('No such coupon exists!', httpStatus.NOT_FOUND);
-      return Promise.reject(err);
-    });
+  get(id) {
+    return this.findById(id)
+      .exec()
+      .then((coupon) => {
+        if (coupon) {
+          return coupon;
+        }
+        const err = new APIError('No such coupon exists!', httpStatus.NOT_FOUND);
+        return Promise.reject(err);
+      });
   },
-
 
   /**
    * List coupons in descending order of 'createdAt' timestamp.
@@ -167,17 +174,19 @@ CouponScheme.statics = {
    * @param {number} limit - Limit number of users to be returned.
    * @returns {Promise<User[]>}
    */
-  list: function list() {
-    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-        _ref$skip = _ref.skip,
-        skip = _ref$skip === undefined ? 0 : _ref$skip,
-        _ref$limit = _ref.limit,
-        limit = _ref$limit === undefined ? 50 : _ref$limit;
-
-    return this.find().select("-couponQR").sort({ createdAt: -1 }).skip(+skip).limit(+limit).exec();
+  list({ skip = 0, limit = 50 } = {}) {
+    return this.find()
+      .select("-couponQR")
+      .sort({ createdAt: -1 })
+      .skip(+skip)
+      .limit(+limit)
+      .exec();
   }
+
+
 };
 
 var Coupon = mongoose.model('Coupon', CouponScheme);
-module.exports = { Coupon: Coupon };
-//# sourceMappingURL=coupon.model.js.map
+module.exports = {Coupon};
+
+

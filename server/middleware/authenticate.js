@@ -1,27 +1,24 @@
-'use strict';
-
 /**
  * Created by Salman on 12/16/2017.
  */
 
-var _require = require('./../user/user.model'),
-    User = _require.User;
+var {User} = require('./../user/user.model');
 
-var authenticate = function authenticate(req, res, next) {
+var authenticate = (req, res, next)=>{
     var token = req.header('x-auth');
 
-    User.findByToken(token).then(function (user) {
-        if (!user) {
+    User.findByToken(token).then((user)=>{
+        if(!user){
             return Promise.reject();
         }
 
         req.user = user;
         req.token = token;
         next();
-    }).catch(function (e) {
+    }).catch((e)=>{
         res.status(401).send();
     });
 };
 
-module.exports = { authenticate: authenticate };
-//# sourceMappingURL=authenticate.js.map
+module.exports = {authenticate};
+

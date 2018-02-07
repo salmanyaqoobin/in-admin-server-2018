@@ -1,87 +1,91 @@
-'use strict';
-
-var request = require('supertest-as-promised');
-var httpStatus = require('http-status');
-var jwt = require('jsonwebtoken');
-var chai = require('chai'); // eslint-disable-line import/newline-after-import
-var expect = require('expect');
-
-var _require = require("mongodb"),
-    ObjectID = _require.ObjectID;
-
-var _require2 = require('./../user/user.model'),
-    User = _require2.User;
-
-var app = require('../../index');
-var config = require('../../config/config');
+const request = require('supertest-as-promised');
+const httpStatus = require('http-status');
+const jwt = require('jsonwebtoken');
+const chai = require('chai'); // eslint-disable-line import/newline-after-import
+const expect = require('expect');
+const {ObjectID} = require("mongodb");
+const {User} = require('./../user/user.model');
+const app = require('../../index');
+const config = require('../../config/config');
 
 chai.config.includeStack = true;
 
-var _require3 = require('./../tests/seed/seed'),
-    users = _require3.users;
+const {users} = require('./../tests/seed/seed');
 //beforeEach(populateUsers);
 
-describe('## Auth APIs', function () {
-  var validUserCredentials = {
+describe('## Auth APIs', () => {
+  const validUserCredentials = {
     username: 'react',
     password: 'express'
   };
 
-  var invalidUserCredentials = {
+  const invalidUserCredentials = {
     username: 'react',
     password: 'IDontKnow'
   };
 
-  var jwtToken = void 0;
+  let jwtToken;
 
-  describe("#POST /api/auth/login", function () {
 
-    it("should login user with valid credentials", function (done) {
+  describe("#POST /api/auth/login", ()=>{
 
-      request(app).post("/api/auth/login").send({
-        email: users[1].email,
-        password: users[1].password
-      }).expect(httpStatus.OK).expect(function (res) {
-        expect(res.headers['x-auth']).toBeTruthy();
-      }).end(function (err, res) {
-        if (err) {
-          return done(err);
-        }
+    it("should login user with valid credentials", (done)=>{
 
-        User.findById(users[1]._id).then(function (user) {
-          expect(user.toObject().tokens[1]).toMatchObject({
-            access: "auth",
-            token: res.headers['x-auth']
+      request(app)
+        .post("/api/auth/login")
+        .send({
+          email: users[1].email,
+          password: users[1].password
+        })
+        .expect(httpStatus.OK)
+        .expect((res)=>{
+          expect(res.headers['x-auth']).toBeTruthy();
+        })
+        .end((err, res)=>{
+          if(err){
+            return done(err);
+          }
+
+          User.findById(users[1]._id).then((user)=>{
+            expect(user.toObject().tokens[1]).toMatchObject({
+              access: "auth",
+              token: res.headers['x-auth']
+            });
+            //expect(user.tokens[0].access).toEqual("auth");
+            //expect(user.tokens[0]._id).toEqual(user.tokens[0]._id);
+            //expect(user.tokens[1].token).toEqual(res.headers['x-auth']);
+            done();
+          }).catch((e)=>{
+            done(e);
           });
-          //expect(user.tokens[0].access).toEqual("auth");
-          //expect(user.tokens[0]._id).toEqual(user.tokens[0]._id);
-          //expect(user.tokens[1].token).toEqual(res.headers['x-auth']);
-          done();
-        }).catch(function (e) {
-          done(e);
         });
-      });
     });
 
-    it("should reject invalid login credentials", function (done) {
-      request(app).post("/api/auth/login").send({
-        email: users[0].email,
-        password: users[0].password + " 1"
-      }).expect(httpStatus.BAD_REQUEST).expect(function (res) {
-        expect(res.headers['x-auth']).toBeFalsy();
-      }).end(function (err, res) {
-        if (err) {
-          return done(err);
-        }
+    it("should reject invalid login credentials", (done)=>{
+      request(app)
+        .post("/api/auth/login")
+        .send({
+          email: users[0].email,
+          password: users[0].password+" 1"
+        })
+        .expect(httpStatus.BAD_REQUEST)
+        .expect((res)=>{
+          expect(res.headers['x-auth']).toBeFalsy();
+        })
+        .end((err, res)=>{
+          if(err){
+            return done(err);
+          }
 
-        User.findById(users[0]._id).then(function (user) {
-          expect(user.tokens.length).toBe(1);
-          done();
-        }).catch(function (e) {
-          done(e);
+          User.findById(users[0]._id).then((user)=>{
+            expect(user.tokens.length).toBe(1);
+            done();
+          }).catch((e)=>{
+            done(e);
+          });
         });
-      });
     });
+
   });
 
   //
@@ -154,4 +158,3 @@ describe('## Auth APIs', function () {
   //  });
   //});
 });
-//# sourceMappingURL=auth.test.js.map

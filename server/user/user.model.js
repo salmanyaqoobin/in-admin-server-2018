@@ -1,21 +1,19 @@
-'use strict';
+const async = require('async');
+const Promise = require('bluebird');
+const mongoose = require('mongoose');
+const httpStatus = require('http-status');
+const APIError = require('../helpers/APIError');
 
-var async = require('async');
-var Promise = require('bluebird');
-var mongoose = require('mongoose');
-var httpStatus = require('http-status');
-var APIError = require('../helpers/APIError');
-
-var validator = require('validator');
-var jwt = require('jsonwebtoken');
-var _ = require('lodash');
-var bcrypt = require('bcryptjs');
+const validator = require('validator');
+const jwt = require('jsonwebtoken');
+const _ = require('lodash');
+const bcrypt = require('bcryptjs');
 
 /**
  * User Schema
  */
 
-var UserSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
@@ -89,7 +87,7 @@ var UserSchema = new mongoose.Schema({
       type: String
     }
   }],
-  points_achieved: {
+  points_achieved:{
     type: Number
   },
   tokens: [{
@@ -104,7 +102,7 @@ var UserSchema = new mongoose.Schema({
   }]
 });
 
-var SALT_ROUNDS = 10;
+const SALT_ROUNDS = 10;
 
 /**
  * Add your
@@ -113,15 +111,17 @@ var SALT_ROUNDS = 10;
  * - virtuals
  */
 
+
+
 /**
  * Pre-Save hooks
  */
-UserSchema.pre('save', function (next) {
+UserSchema.pre('save', function(next) {
   var user = this;
 
-  if (user.isModified('password')) {
-    bcrypt.genSalt(10, function (err, salt) {
-      bcrypt.hash(user.password, salt, function (err, hash) {
+  if(user.isModified('password')){
+    bcrypt.genSalt(10, function(err, salt) {
+      bcrypt.hash(user.password, salt, function(err, hash) {
         user.password = hash;
         next();
       });
@@ -157,7 +157,7 @@ UserSchema.method({
   //  var userObject = user.toObject();
   //  return _.pick(userObject, ['_id', 'email']);
   //},
-  toJSON: function toJSON() {
+  toJSON(){
     var user = this;
     var userObject = user.toObject();
     delete userObject.password;
@@ -165,26 +165,31 @@ UserSchema.method({
     return userObject;
     //return _.pick(userObject, ['_id', 'email']);
   },
-  generateAuthToken: function generateAuthToken() {
+
+  generateAuthToken() {
     var user = this;
     var access = 'auth';
 
     // Generate a JWT token with _id, access = auth, expire for 1 hour.
-    var token = jwt.sign({ _id: user._id.toHexString(), access: access, exp: Math.floor(Date.now() / 1000) + 60 * 60 }, process.env.JWT_SECRET).toString();
+    var token = jwt.sign({_id: user._id.toHexString(), access, exp: Math.floor(Date.now() / 1000) + (60 * 60)}, process.env.JWT_SECRET).toString();
 
-    user.tokens.push({ access: access, token: token });
+    user.tokens.push({access, token});
 
-    return user.save().then(function () {
+    return user.save().then(() => {
       return token;
     });
   },
-  removeToken: function removeToken(token) {
+
+  removeToken(token) {
     var user = this;
 
-    return user.update({ $pull: { tokens: { token: token } } }, { multi: true }).catch(function (e) {
-      Promise.reject(e);
-    });
+    return user.update(
+      { $pull:{ tokens:{token} } },
+      { multi: true }
+    ).catch((e)=>{Promise.reject(e)});
   }
+
+
 });
 
 /**
@@ -196,16 +201,17 @@ UserSchema.statics = {
    * @param {ObjectId} id - The objectId of user.
    * @returns {Promise<User, APIError>}
    */
-  get: function get(id) {
-    return this.findById(id).exec().then(function (user) {
-      if (user) {
-        return user;
-      }
-      var err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
-      return Promise.reject(err);
-    });
+  get(id) {
+    return this.findById(id)
+      .exec()
+      .then((user) => {
+        if (user) {
+          return user;
+        }
+        const err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
+        return Promise.reject(err);
+      });
   },
-
 
   /**
    * List users in descending order of 'createdAt' timestamp.
@@ -213,26 +219,25 @@ UserSchema.statics = {
    * @param {number} limit - Limit number of users to be returned.
    * @returns {Promise<User[]>}
    */
-  list: function list() {
-    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-        _ref$skip = _ref.skip,
-        skip = _ref$skip === undefined ? 0 : _ref$skip,
-        _ref$limit = _ref.limit,
-        limit = _ref$limit === undefined ? 50 : _ref$limit;
-
-    return this.find().sort({ createdAt: -1 }).skip(+skip).limit(+limit).exec();
+  list({ skip = 0, limit = 50 } = {}) {
+    return this.find()
+      .sort({ createdAt: -1 })
+      .skip(+skip)
+      .limit(+limit)
+      .exec();
   },
-  findByToken: function findByToken(token) {
+
+  findByToken(token){
     var User = this;
     var decode;
 
-    try {
+    try{
       decode = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (e) {
+    } catch(e){
       //return new Promise((resolve, reject)=>{
       //    reject();
       //});
-      var err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
+      const err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
       return Promise.reject(err);
     }
 
@@ -242,17 +247,18 @@ UserSchema.statics = {
       'tokens.access': 'auth'
     });
   },
-  findByTokenPassword: function findByTokenPassword(token) {
+
+  findByTokenPassword(token){
     var User = this;
     var decode;
 
-    try {
+    try{
       decode = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (e) {
+    } catch(e){
       //return new Promise((resolve, reject)=>{
       //    reject();
       //});
-      var err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
+      const err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
       return Promise.reject(err);
     }
 
@@ -262,7 +268,6 @@ UserSchema.statics = {
       'tokens.access': 'auth'
     }).select("_id email password");
   },
-
 
   /**
    * Change user password
@@ -293,25 +298,25 @@ UserSchema.statics = {
   //  });
   //}),
 
-  changePassword: function changePassword(_id, currentPassword, newPassword, userHashedPassword) {
+  changePassword(_id, currentPassword, newPassword, userHashedPassword ){
     console.log("db pass", _id);
-    return User.findWithPassword({ _id: _id }, currentPassword).then(function (user) {
+    return User.findWithPassword({_id:_id}, currentPassword).then((user)=> {
       if (!user) {
-        var err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
+        const err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
         return Promise.reject(err);
       }
       user.password = newPassword;
       user.save();
       console.log("user update");
       return Promise.resolve(user);
-      //return new Promise((resolve, reject)=>{
-      //  User.updateOne({_id: _id}, {password: newPassword}).then((result) => {
-      //    console.log("done");
-      //    return resolve(result);
-      //  }).catch((e)=> {
-      //    return reject(e);
-      //  });
-      //});
+        //return new Promise((resolve, reject)=>{
+        //  User.updateOne({_id: _id}, {password: newPassword}).then((result) => {
+        //    console.log("done");
+        //    return resolve(result);
+        //  }).catch((e)=> {
+        //    return reject(e);
+        //  });
+        //});
     });
   },
 
@@ -322,67 +327,67 @@ UserSchema.statics = {
    * @param password {string} - current user's password
    * @returns Promise
    * */
-  findWithPassword: function findWithPassword(criteria, password) {
-    return new Promise(function (resolve, reject) {
-      User.findOne(criteria).select('_id password email').then(function (user) {
+  findWithPassword: (criteria, password) => new Promise((resolve, reject) => {
+    User.findOne(criteria).select('_id password email')
+      .then((user) => {
         if (!user) {
-          var err = new APIError('User with provided credentials not found', 401, true);
+          const err = new APIError('User with provided credentials not found', 401, true);
           return reject(err);
         }
-        return bcrypt.compare(password, user.password).then(function (allow) {
+        return bcrypt.compare(password, user.password).then((allow) => {
           if (!allow) {
-            var _err = new APIError('User with provided credentials not found', 401, true);
-            return reject(_err);
+            const err = new APIError('User with provided credentials not found', 401, true);
+            return reject(err);
           }
           return resolve(user);
         });
-      }).catch(reject);
-    });
-  },
+      })
+      .catch(reject);
+  }),
 
   /**
    * Generate password hash using bcrypt
    * @param password {string}
    * @returns Promise
    * */
-  hash: function hash(password, userPassowrd) {
-    return new Promise(function (resolve, reject) {
-      bcrypt.compare(password, userPassowrd, function (err, res) {
-        if (res) {
-          resolve(userPassowrd);
-        } else {
-          var _err2 = new APIError('password not found', httpStatus.NOT_FOUND);
-          reject(_err2);
-        }
-      });
+  hash: (password, userPassowrd) => new Promise((resolve, reject) => {
+    bcrypt.compare(password, userPassowrd, (err, res)=>{
+      if(res){
+        resolve(userPassowrd);
+      } else {
+        const err = new APIError('password not found', httpStatus.NOT_FOUND);
+        reject(err);
+      }
     });
-  },
+  }),
 
-  findByCredentials: function findByCredentials(email, password) {
-    return User.findOne({ email: email }).then(function (user) {
-      if (!user) {
-        var err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
+
+  findByCredentials(email, password ){
+    return User.findOne({email:email}).then((user)=>{
+      if(!user){
+        const err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
         return Promise.reject(err);
       }
 
-      return new Promise(function (resolve, reject) {
-        bcrypt.compare(password, user.password, function (err, res) {
-          if (res) {
+      return new Promise( (resolve, reject)=>{
+        bcrypt.compare(password, user.password, (err, res)=>{
+          if(res){
             resolve(user);
           } else {
-            var _err3 = new APIError('password not found', httpStatus.NOT_FOUND);
-            reject(_err3);
+            const err = new APIError('password not found', httpStatus.NOT_FOUND);
+            reject(err);
           }
         });
       });
     });
   }
+
 };
+
 
 /**
  * @typedef User
  */
 var User = mongoose.model('User', UserSchema);
-module.exports = { User: User };
+module.exports = {User};
 //module.exports = mongoose.model('User', UserSchema);
-//# sourceMappingURL=user.model.js.map

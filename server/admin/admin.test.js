@@ -1,18 +1,11 @@
-'use strict';
-
-var mongoose = require('mongoose');
-var request = require('supertest');
-var httpStatus = require('http-status');
-var chai = require('chai'); // eslint-disable-line import/newline-after-import
-var expect = require('expect');
-
-var _require = require("mongodb"),
-    ObjectID = _require.ObjectID;
-
-var _require2 = require('./admin.model'),
-    Admin = _require2.Admin;
-
-var app = require('../../index');
+const mongoose = require('mongoose');
+const request = require('supertest');
+const httpStatus = require('http-status');
+const chai = require('chai'); // eslint-disable-line import/newline-after-import
+const expect = require('expect');
+const {ObjectID} = require("mongodb");
+const {Admin} = require('./admin.model');
+const app = require('../../index');
 //
 //chai.config.includeStack = true;
 //
@@ -114,4 +107,3 @@ var app = require('../../index');
 //
 //
 //});
-//# sourceMappingURL=admin.test.js.map

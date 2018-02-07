@@ -1,26 +1,15 @@
-'use strict';
-
-var mongoose = require('mongoose');
-var request = require('supertest');
-var httpStatus = require('http-status');
-var chai = require('chai'); // eslint-disable-line import/newline-after-import
-var expect = require('expect');
-
-var _require = require("mongodb"),
-    ObjectID = _require.ObjectID;
-
-var _require2 = require('./user.model'),
-    User = _require2.User;
-
-var app = require('../../index');
+const mongoose = require('mongoose');
+const request = require('supertest');
+const httpStatus = require('http-status');
+const chai = require('chai'); // eslint-disable-line import/newline-after-import
+const expect = require('expect');
+const {ObjectID} = require("mongodb");
+const {User} = require('./user.model');
+const app = require('../../index');
 
 chai.config.includeStack = true;
 
-var _require3 = require('./../tests/seed/seed'),
-    users = _require3.users,
-    populateUsers = _require3.populateUsers,
-    todos = _require3.todos,
-    populateTodos = _require3.populateTodos;
+const {users, populateUsers, todos, populateTodos} = require('./../tests/seed/seed');
 
 beforeEach(populateUsers);
 
@@ -29,7 +18,7 @@ beforeEach(populateTodos);
 /**
  * root level hooks
  */
-after(function (done) {
+after((done) => {
   // required because https://github.com/Automattic/mongoose/issues/1251#issuecomment-65793092
   mongoose.models = {};
   mongoose.modelSchemas = {};
@@ -37,58 +26,85 @@ after(function (done) {
   done();
 });
 
-describe('## User APIs', function () {
+describe('## User APIs', () => {
 
-  describe('# POST /api/users', function () {
-    it('should create user', function (done) {
+  describe('# POST /api/users', ()=>{
+    it('should create user',(done)=>{
       var name = "salman";
       var email = "email@email.com";
       var password = "passwordabc123";
       var mobileNumber = "0566458686";
 
-      request(app).post("/api/users").send({ name: name, email: email, password: password }).expect(httpStatus.OK).expect(function (res) {
-        expect(res.header).toHaveProperty('x-auth');
-        expect(res.body).toHaveProperty('_id');
-        expect(res.body.email).toBe(email);
-      }).end(function (err) {
-        if (err) {
-          return done(err);
-        }
+      request(app)
+        .post("/api/users")
+        .send({name, email, password})
+        .expect(httpStatus.OK)
+        .expect((res)=>{
+          expect(res.header).toHaveProperty('x-auth');
+          expect(res.body).toHaveProperty('_id');
+          expect(res.body.email).toBe(email);
+        })
+        .end((err)=>{
+          if(err){
+            return done(err);
+          }
 
-        User.findOne({ email: email }).then(function (user) {
-          expect(user).toBeTruthy();
-          expect(user.email).toEqual(email);
-          expect(user.password).not.toEqual(password);
-          done();
-        }).catch(function (e) {
-          done(e);
+          User.findOne({email}).then((user)=>{
+            expect(user).toBeTruthy();
+            expect(user.email).toEqual(email);
+            expect(user.password).not.toEqual(password);
+            done();
+          }).catch((e)=>{
+            done(e);
+          });
+
         });
-      });
     });
 
-    it('should not create user with invalid data', function (done) {
-      request(app).post("/api/users").send({ name: "salman", email: 'sxample', password: 'asd' }).expect(httpStatus.BAD_REQUEST).end(done);
+    it('should not create user with invalid data',(done)=>{
+      request(app)
+        .post("/api/users")
+        .send({name:"salman", email:'sxample', password:'asd'})
+        .expect(httpStatus.BAD_REQUEST)
+        .end(done);
     });
 
-    it('should not create user, if email already created', function (done) {
-      request(app).post("/api/users").send({ name: "salman", email: users[0].email, password: '123465432125' }).expect(httpStatus.BAD_REQUEST).end(done);
+    it('should not create user, if email already created',(done)=>{
+      request(app)
+        .post("/api/users")
+        .send({name:"salman", email:users[0].email, password:'123465432125'})
+        .expect(httpStatus.BAD_REQUEST)
+        .end(done);
     });
   });
 
-  describe('#GET /api/users/me', function () {
-    it('should be valid user header', function (done) {
-      request(app).get("/api/users/me").set('x-auth', users[0].tokens[0].token).expect(httpStatus.OK).expect(function (res) {
-        expect(res.body._id).toBe(users[0]._id.toHexString());
-        expect(res.body.email).toBe(users[0].email);
-      }).end(done);
+
+  describe('#GET /api/users/me', ()=>{
+    it('should be valid user header', (done)=>{
+      request(app)
+        .get("/api/users/me")
+        .set('x-auth', users[0].tokens[0].token)
+        .expect(httpStatus.OK)
+        .expect((res)=>{
+          expect(res.body._id).toBe(users[0]._id.toHexString());
+          expect(res.body.email).toBe(users[0].email);
+        })
+        .end(done);
     });
 
-    it('should return 401 for un-authorized user', function (done) {
-      request(app).get("/api/users/me").expect(httpStatus.UNAUTHORIZED).expect(function (res) {
-        expect(res.body).toEqual({});
-      }).end(done);
+    it('should return 401 for un-authorized user', (done)=>{
+      request(app)
+        .get("/api/users/me")
+        .expect(httpStatus.UNAUTHORIZED)
+        .expect((res)=>{
+          expect(res.body).toEqual({});
+        })
+        .end(done);
     });
+
   });
+
+
 
   //let user = {
   //  username: 'KK123',
@@ -191,4 +207,3 @@ describe('## User APIs', function () {
   //  });
   //});
 });
-//# sourceMappingURL=user.test.js.map

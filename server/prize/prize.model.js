@@ -1,15 +1,11 @@
-'use strict';
-
-var async = require('async');
-var Promise = require('bluebird');
-var mongoose = require('mongoose');
-var httpStatus = require('http-status');
-var APIError = require('../helpers/APIError');
-var validator = require('validator');
-var _ = require('lodash');
-
-var _require = require('mongodb'),
-    ObjectID = _require.ObjectID;
+const async = require('async');
+const Promise = require('bluebird');
+const mongoose = require('mongoose');
+const httpStatus = require('http-status');
+const APIError = require('../helpers/APIError');
+const validator = require('validator');
+const _ = require('lodash');
+const {ObjectID} = require('mongodb');
 
 /**
  * Prize Schema
@@ -88,6 +84,7 @@ var PrizeScheme = new mongoose.Schema({
 
 });
 
+
 /**
  * Methods
  */
@@ -98,7 +95,7 @@ PrizeScheme.method({
   //  var userObject = user.toObject();
   //  return _.pick(userObject, ['_id', 'email']);
   //},
-  toJSON: function toJSON() {
+  toJSON(){
     var coupon = this;
     var couponObject = coupon.toObject();
     //delete couponObject.couponQR;
@@ -140,7 +137,6 @@ PrizeScheme.method({
   //  var count = coupon.aggregate(aggregatorOpts).exec();
   //  return count;
   //}
-
 });
 
 /**
@@ -152,16 +148,17 @@ PrizeScheme.statics = {
    * @param {ObjectId} id - The objectId of prize.
    * @returns {Promise<Prize, APIError>}
    */
-  get: function get(id) {
-    return this.findById(id).exec().then(function (prize) {
-      if (prize) {
-        return prize;
-      }
-      var err = new APIError('No such prize exists!', httpStatus.NOT_FOUND);
-      return Promise.reject(err);
-    });
+  get(id) {
+    return this.findById(id)
+      .exec()
+      .then((prize) => {
+        if (prize) {
+          return prize;
+        }
+        const err = new APIError('No such prize exists!', httpStatus.NOT_FOUND);
+        return Promise.reject(err);
+      });
   },
-
 
   /**
    * List prizes in descending order of 'createdAt' timestamp.
@@ -169,17 +166,18 @@ PrizeScheme.statics = {
    * @param {number} limit - Limit number of prize to be returned.
    * @returns {Promise<Prize[]>}
    */
-  list: function list() {
-    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-        _ref$skip = _ref.skip,
-        skip = _ref$skip === undefined ? 0 : _ref$skip,
-        _ref$limit = _ref.limit,
-        limit = _ref$limit === undefined ? 50 : _ref$limit;
-
-    return this.find().select("-days_consumption").sort({ createdAt: -1 }).skip(+skip).limit(+limit).exec();
+  list({ skip = 0, limit = 50 } = {}) {
+    return this.find()
+      .select("-days_consumption")
+      .sort({ createdAt: -1 })
+      .skip(+skip)
+      .limit(+limit)
+      .exec();
   }
+
 };
 
 var Prize = mongoose.model('Prize', PrizeScheme);
-module.exports = { Prize: Prize };
-//# sourceMappingURL=prize.model.js.map
+module.exports = {Prize};
+
+

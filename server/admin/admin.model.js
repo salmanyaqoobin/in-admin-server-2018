@@ -1,21 +1,19 @@
-'use strict';
+const async = require('async');
+const Promise = require('bluebird');
+const mongoose = require('mongoose');
+const httpStatus = require('http-status');
+const APIError = require('../helpers/APIError');
 
-var async = require('async');
-var Promise = require('bluebird');
-var mongoose = require('mongoose');
-var httpStatus = require('http-status');
-var APIError = require('../helpers/APIError');
-
-var validator = require('validator');
-var jwt = require('jsonwebtoken');
-var _ = require('lodash');
-var bcrypt = require('bcryptjs');
+const validator = require('validator');
+const jwt = require('jsonwebtoken');
+const _ = require('lodash');
+const bcrypt = require('bcryptjs');
 
 /**
  * Admin Schema
  */
 
-var AdminSchema = new mongoose.Schema({
+const AdminSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
@@ -65,7 +63,7 @@ var AdminSchema = new mongoose.Schema({
   }]
 });
 
-var SALT_ROUNDS = 10;
+const SALT_ROUNDS = 10;
 
 /**
  * Add your
@@ -74,15 +72,17 @@ var SALT_ROUNDS = 10;
  * - virtuals
  */
 
+
+
 /**
  * Pre-Save hooks
  */
-AdminSchema.pre('save', function (next) {
+AdminSchema.pre('save', function(next) {
   var admin = this;
 
-  if (admin.isModified('password')) {
-    bcrypt.genSalt(10, function (err, salt) {
-      bcrypt.hash(admin.password, salt, function (err, hash) {
+  if(admin.isModified('password')){
+    bcrypt.genSalt(10, function(err, salt) {
+      bcrypt.hash(admin.password, salt, function(err, hash) {
         admin.password = hash;
         next();
       });
@@ -102,34 +102,39 @@ AdminSchema.method({
   //  var userObject = admin.toObject();
   //  return _.pick(userObject, ['_id', 'email']);
   //},
-  toJSON: function toJSON() {
+  toJSON(){
     var admin = this;
     var userObject = admin.toObject();
     delete userObject.password;
     delete userObject.tokens;
     return userObject;
-    //return _.pick(userObject, ['_id', 'email']);
+      //return _.pick(userObject, ['_id', 'email']);
   },
-  generateAuthToken: function generateAuthToken() {
+
+  generateAuthToken() {
     var admin = this;
     var access = 'auth';
 
     // Generate a JWT token with _id, access = auth, expire for 1 hour.
-    var token = jwt.sign({ _id: admin._id.toHexString(), access: access, exp: Math.floor(Date.now() / 1000) + 60 * 60 }, process.env.JWT_SECRET).toString();
+    var token = jwt.sign({_id: admin._id.toHexString(), access, exp: Math.floor(Date.now() / 1000) + (60 * 60)}, process.env.JWT_SECRET).toString();
 
-    admin.tokens.push({ access: access, token: token });
+    admin.tokens.push({access, token});
 
-    return admin.save().then(function () {
+    return admin.save().then(() => {
       return token;
     });
   },
-  removeToken: function removeToken(token) {
+
+  removeToken(token) {
     var admin = this;
 
-    return admin.update({ $pull: { tokens: { token: token } } }, { multi: true }).catch(function (e) {
-      Promise.reject(e);
-    });
+    return admin.update(
+      { $pull:{ tokens:{token} } },
+      { multi: true }
+    ).catch((e)=>{Promise.reject(e)});
   }
+
+
 });
 
 /**
@@ -141,16 +146,17 @@ AdminSchema.statics = {
    * @param {ObjectId} id - The objectId of user.
    * @returns {Promise<User, APIError>}
    */
-  get: function get(id) {
-    return this.findById(id).exec().then(function (admin) {
-      if (admin) {
-        return admin;
-      }
-      var err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
-      return Promise.reject(err);
-    });
+  get(id) {
+    return this.findById(id)
+      .exec()
+      .then((admin) => {
+        if (admin) {
+          return admin;
+        }
+        const err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
+        return Promise.reject(err);
+      });
   },
-
 
   /**
    * List users in descending order of 'createdAt' timestamp.
@@ -158,26 +164,25 @@ AdminSchema.statics = {
    * @param {number} limit - Limit number of users to be returned.
    * @returns {Promise<User[]>}
    */
-  list: function list() {
-    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-        _ref$skip = _ref.skip,
-        skip = _ref$skip === undefined ? 0 : _ref$skip,
-        _ref$limit = _ref.limit,
-        limit = _ref$limit === undefined ? 50 : _ref$limit;
-
-    return this.find().select("_id name email role is_active createdAt").sort({ createdAt: -1 }).skip(+skip).limit(+limit).exec();
+  list({ skip = 0, limit = 50 } = {}) {
+    return this.find().select("_id name email role is_active createdAt")
+      .sort({ createdAt: -1 })
+      .skip(+skip)
+      .limit(+limit)
+      .exec();
   },
-  findByToken: function findByToken(token) {
+
+  findByToken(token){
     var Admin = this;
     var decode;
 
-    try {
+    try{
       decode = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (e) {
+    } catch(e){
       //return new Promise((resolve, reject)=>{
       //    reject();
       //});
-      var err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
+      const err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
       return Promise.reject(err);
     }
 
@@ -187,17 +192,18 @@ AdminSchema.statics = {
       'tokens.access': 'auth'
     });
   },
-  findByTokenPassword: function findByTokenPassword(token) {
+
+  findByTokenPassword(token){
     var Admin = this;
     var decode;
 
-    try {
+    try{
       decode = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (e) {
+    } catch(e){
       //return new Promise((resolve, reject)=>{
       //    reject();
       //});
-      var err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
+      const err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
       return Promise.reject(err);
     }
 
@@ -207,11 +213,13 @@ AdminSchema.statics = {
       'tokens.access': 'auth'
     }).select("_id email password");
   },
-  changePassword: function changePassword(_id, currentPassword, newPassword, userHashedPassword) {
+
+
+  changePassword(_id, currentPassword, newPassword, userHashedPassword ){
     console.log("db pass", _id);
-    return Admin.findWithPassword({ _id: _id }, currentPassword).then(function (admin) {
+    return Admin.findWithPassword({_id:_id}, currentPassword).then((admin)=> {
       if (!admin) {
-        var err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
+        const err = new APIError('No such user exists!', httpStatus.NOT_FOUND);
         return Promise.reject(err);
       }
       admin.password = newPassword;
@@ -228,67 +236,67 @@ AdminSchema.statics = {
    * @param password {string} - current user's password
    * @returns Promise
    * */
-  findWithPassword: function findWithPassword(criteria, password) {
-    return new Promise(function (resolve, reject) {
-      Admin.findOne(criteria).select('_id password email').then(function (admin) {
+  findWithPassword: (criteria, password) => new Promise((resolve, reject) => {
+    Admin.findOne(criteria).select('_id password email')
+      .then((admin) => {
         if (!admin) {
-          var err = new APIError('User with provided credentials not found', 401, true);
+          const err = new APIError('User with provided credentials not found', 401, true);
           return reject(err);
         }
-        return bcrypt.compare(password, admin.password).then(function (allow) {
+        return bcrypt.compare(password, admin.password).then((allow) => {
           if (!allow) {
-            var _err = new APIError('User with provided credentials not found', 401, true);
-            return reject(_err);
+            const err = new APIError('User with provided credentials not found', 401, true);
+            return reject(err);
           }
           return resolve(admin);
         });
-      }).catch(reject);
-    });
-  },
+      })
+      .catch(reject);
+  }),
 
   /**
    * Generate password hash using bcrypt
    * @param password {string}
    * @returns Promise
    * */
-  hash: function hash(password, userPassowrd) {
-    return new Promise(function (resolve, reject) {
-      bcrypt.compare(password, userPassowrd, function (err, res) {
-        if (res) {
-          resolve(userPassowrd);
-        } else {
-          var _err2 = new APIError('password not found', httpStatus.NOT_FOUND);
-          reject(_err2);
-        }
-      });
+  hash: (password, userPassowrd) => new Promise((resolve, reject) => {
+    bcrypt.compare(password, userPassowrd, (err, res)=>{
+      if(res){
+        resolve(userPassowrd);
+      } else {
+        const err = new APIError('password not found', httpStatus.NOT_FOUND);
+        reject(err);
+      }
     });
-  },
+  }),
 
-  findByCredentials: function findByCredentials(email, password) {
-    return Admin.findOne({ email: email }).then(function (admin) {
-      if (!admin) {
-        var err = new APIError('No such user exists!', httpStatus.NOT_FOUND, true);
+
+  findByCredentials(email, password ){
+    return Admin.findOne({email:email}).then((admin)=>{
+      if(!admin){
+        const err = new APIError('No such user exists!', httpStatus.NOT_FOUND, true);
         return Promise.reject(err);
       }
 
-      return new Promise(function (resolve, reject) {
-        bcrypt.compare(password, admin.password, function (err, res) {
-          if (res) {
+      return new Promise( (resolve, reject)=>{
+        bcrypt.compare(password, admin.password, (err, res)=>{
+          if(res){
             resolve(admin);
           } else {
-            var _err3 = new APIError('password not found', httpStatus.NOT_FOUND, true);
-            reject(_err3);
+            const err = new APIError('password not found', httpStatus.NOT_FOUND, true);
+            reject(err);
           }
         });
       });
     });
   }
+
 };
+
 
 /**
  * @typedef User
  */
 var Admin = mongoose.model('Admin', AdminSchema);
-module.exports = { Admin: Admin };
+module.exports = {Admin};
 //module.exports = mongoose.model('User', AdminSchema);
-//# sourceMappingURL=admin.model.js.map

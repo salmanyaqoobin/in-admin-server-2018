@@ -1,26 +1,24 @@
-'use strict';
+const express = require('express');
+const path = require("path");
 
-var express = require('express');
-var path = require("path");
+const userRoutes = require('./server/user/user.route');
+const authRoutes = require('./server/auth/auth.route');
+const todoRoutes = require('./server/todo/todo.route');
+const adminRoutes = require('./server/admin/admin.route');
+const couponRoutes = require('./server/coupon/coupon.route');
+const prizeRoutes = require('./server/prize/prize.route');
+const mediaRoutes = require('./server/media/media.route');
 
-var userRoutes = require('./server/user/user.route');
-var authRoutes = require('./server/auth/auth.route');
-var todoRoutes = require('./server/todo/todo.route');
-var adminRoutes = require('./server/admin/admin.route');
-var couponRoutes = require('./server/coupon/coupon.route');
-var prizeRoutes = require('./server/prize/prize.route');
-var mediaRoutes = require('./server/media/media.route');
-
-var router = express.Router(); // eslint-disable-line new-cap
+const router = express.Router(); // eslint-disable-line new-cap
 
 // TODO: use glob to match *.route files
 
 /** GET /health-check - Check service health */
-router.get('/health-check', function (req, res) {
-  return res.send('OK');
-});
+router.get('/health-check', (req, res) =>
+  res.send('OK')
+);
 
-router.get('/admin', function (req, res) {
+router.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist/index.html'));
 });
 
@@ -45,5 +43,6 @@ router.use('/auth', authRoutes);
 // mount todos routes at /todos
 router.use('/todos', todoRoutes);
 
+
+
 module.exports = router;
-//# sourceMappingURL=index.route.js.map
